@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeSync — Academic Performance Analyzer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app-container">
+
+        <!-- =========================================================
+             HEADER
+             ========================================================= -->
+        <header class="app-header">
+            <div class="brand-section">
+                <div class="brand-icon" aria-hidden="true">
+                    📊
+                </div>
+                <div class="brand-content">
+                    <h1>GradeSync</h1>
+                    <p>Academic Performance Analyzer</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <button type="button" id="resetButton" class="secondary-button">
+                    Reset Analysis
+                </button>
+            </div>
+        </header>
+
+        <!-- =========================================================
+             MAIN CONTENT / UPLOAD SECTION
+             ========================================================= -->
+        <main>
+            <section class="upload-section" aria-labelledby="uploadTitle">
+                <div class="section-intro">
+                    <div>
+                        <span class="eyebrow">DATA SOURCE</span>
+                        <h2 id="uploadTitle">Analyze your semester grades</h2>
+                        <p>
+                            Upload your exam score CSV to instantly review subject-wise percentages, 
+                            consistency scores, and academic trends for your upcoming pre-boards.
+                        </p>
+                    </div>
+                </div>
+
+                <label class="upload-zone" for="fileInput">
+                    <div class="upload-icon" aria-hidden="true">
+                        ↑
+                    </div>
+                    <div class="upload-content" id="uploadContentBox">
+                        <strong>Choose your grades CSV file</strong>
+                        <span>CSV format only · Columns: Date, Subject, ExamType, MarksObtained, MaxMarks</span>
+                    </div>
+                    <input type="file" id="fileInput" accept=".csv">
+                </label>
+
+                <div class="selected-file" id="selectedFile">
+                    <div class="selected-file-info">
+                        <span class="file-type-badge">CSV</span>
+                        <div>
+                            <strong id="fileName">No file selected</strong>
+                            <span id="fileSize">Select a performance file to begin</span>
+                        </div>
+                    </div>
+                    <button type="button" id="analyzeButton" class="primary-button" disabled>
+                        Analyze Performance
+                    </button>
+                </div>
+
+                <div class="analysis-status" id="analysisStatus">
+                    <span class="status-dot" id="statusDot"></span>
+                    <span id="statusText">Waiting for a file</span>
+                </div>
+            </section>
+
+            <!-- =========================================================
+                 DASHBOARD (Hidden until analysis)
+                 ========================================================= -->
+            <section class="dashboard" id="dashboard" aria-live="polite">
+
+                <div class="dashboard-header">
+                    <div>
+                        <span class="eyebrow">PERFORMANCE OVERVIEW</span>
+                        <h2>Academic Summary</h2>
+                        <p id="analysisSubtitle">Your overall academic standing at a glance.</p>
+                    </div>
+                    <div class="dashboard-meta">
+                        <span id="examCount">0 exams</span>
+                        <span class="meta-separator">•</span>
+                        <span id="analysisDate">—</span>
+                    </div>
+                </div>
+
+                <!-- SUMMARY CARDS -->
+                <div class="summary-grid">
+                    <article class="summary-card">
+                        <div class="card-top">
+                            <span class="card-label">Overall Percentage</span>
+                            <span class="card-icon">%</span>
+                        </div>
+                        <strong class="card-value" id="overallPercentage">0%</strong>
+                        <span class="card-description">Weighted average score</span>
+                    </article>
+
+                    <article class="summary-card">
+                        <div class="card-top">
+                            <span class="card-label">Average Marks</span>
+                            <span class="card-icon">∅</span>
+                        </div>
+                        <strong class="card-value" id="averageMarks">0 / 100</strong>
+                        <span class="card-description">Mean across evaluations</span>
+                    </article>
+
+                    <article class="summary-card">
+                        <div class="card-top">
+                            <span class="card-label">Top Subject</span>
+                            <span class="card-icon">★</span>
+                        </div>
+                        <strong class="card-value" id="topSubject">—</strong>
+                        <span class="card-description" id="topSubjectScore">No data</span>
+                    </article>
+
+                    <article class="summary-card">
+                        <div class="card-top">
+                            <span class="card-label">Consistency Score</span>
+                            <span class="card-icon">⚡</span>
+                        </div>
+                        <strong class="card-value" id="consistencyScore">—</strong>
+                        <span class="card-description">Based on standard deviation</span>
+                    </article>
+                </div>
+
+                <!-- ANALYTICS GRID -->
+                <div class="analytics-grid">
+                    <!-- Subject Breakdown -->
+                    <article class="dashboard-card category-card">
+                        <div class="card-heading">
+                            <div>
+                                <span class="eyebrow">BREAKDOWN</span>
+                                <h3>Subject-wise Performance</h3>
+                            </div>
+                            <button type="button" class="icon-button" id="subjectSortButton" title="Sort subjects">
+                                ↑
+                            </button>
+                        </div>
+                        <div class="category-list" id="subjectList"></div>
+                        <div class="empty-state" id="subject-empty-state">
+                            <div class="empty-state-icon">📚</div>
+                            <div class="empty-state-content">
+                                <h4>No subject data</h4>
+                                <p>Subject breakdowns will appear here once data is processed.</p>
+                            </div>
+                        </div>
+                    </article>
+
+                    <!-- Exam Trend Chart -->
+                    <article class="dashboard-card monthly-card">
+                        <div class="card-heading">
+                            <div>
+                                <span class="eyebrow">TREND</span>
+                                <h3>Score Progression</h3>
+                            </div>
+                            <span class="card-badge" id="trendBadge">—</span>
+                        </div>
+                        <div class="chart-container" id="scoreChart">
+                            <div class="chart-placeholder">
+                                <div class="empty-state-icon" style="margin-bottom: 4px;">📈</div>
+                                <span>Score progression chart</span>
+                                <small>Data will appear after analysis</small>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- STATISTICS SECTION -->
+                <section class="dashboard-card statistics-section">
+                    <div class="card-heading">
+                        <div>
+                            <span class="eyebrow">STATISTICS</span>
+                            <h3>Detailed Metrics</h3>
+                        </div>
+                        <span class="card-description">NumPy & Pandas statistical breakdown</span>
+                    </div>
+                    <div class="statistics-grid">
+                        <div class="stat-item">
+                            <span>Mean Score</span>
+                            <strong id="statMean">0</strong>
+                        </div>
+                        <div class="stat-item">
+                            <span>Median Score</span>
+                            <strong id="statMedian">0</strong>
+                        </div>
+                        <div class="stat-item">
+                            <span>Std Deviation</span>
+                            <strong id="statStd">0</strong>
+                        </div>
+                        <div class="stat-item">
+                            <span>25th Percentile</span>
+                            <strong id="statP25">0</strong>
+                        </div>
+                        <div class="stat-item">
+                            <span>75th Percentile</span>
+                            <strong id="statP75">0</strong>
+                        </div>
+                        <div class="stat-item">
+                            <span>Lowest Score</span>
+                            <strong id="statMin">0</strong>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- EXAM EXPLORER / TABLE -->
+                <section class="dashboard-card transactions-section">
+                    <div class="card-heading">
+                        <div>
+                            <span class="eyebrow">RECORDS</span>
+                            <h3>Exam Records Explorer</h3>
+                        </div>
+                        <span class="result-count" id="resultCount">0 results</span>
+                    </div>
+
+                    <div class="filter-bar">
+                        <div class="filter-control search-control">
+                            <label for="searchInput">Search</label>
+                            <input type="search" id="searchInput" placeholder="Search subject or exam...">
+                        </div>
+
+                        <div class="filter-control">
+                            <label for="subjectFilter">Subject</label>
+                            <select id="subjectFilter">
+                                <option value="all">All subjects</option>
+                            </select>
+                        </div>
+
+                        <div class="filter-control">
+                            <label for="examTypeFilter">Exam Type</label>
+                            <select id="examTypeFilter">
+                                <option value="all">All exam types</option>
+                            </select>
+                        </div>
+
+                        <button type="button" class="filter-reset" id="clearFilters">Clear Filters</button>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="transaction-table">
+                            <caption class="sr-only">Exam performance records</caption>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Subject</th>
+                                    <th>Exam Type</th>
+                                    <th>Marks Obtained</th>
+                                    <th class="amount-column">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="examTableBody">
+                                <tr id="table-empty-row">
+                                    <td colspan="5" class="table-empty">No examination data available.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination" id="pagination">
+                        <button type="button" class="pagination-button" id="previousPage" disabled>← Previous</button>
+                        <span id="pageInfo">Page 0 of 0</span>
+                        <button type="button" class="pagination-button" id="nextPage" disabled>Next →</button>
+                    </div>
+                </section>
+
+            </section>
+        </main>
+
+        <!-- =========================================================
+             FOOTER
+             ========================================================= -->
+        <app-footer class="app-footer">
+            <p>GradeSync <span>•</span> Pre-Board Academic Revision Tool</p>
+            <p>Python · Pandas · NumPy · FastAPI · JavaScript</p>
+        </app-footer>
+
+    </div>
+
+<script src="main.js"></script>
+
+</body>
+</html>
